@@ -1,0 +1,69 @@
+name: CI/CD Pipeline
+
+# Disparador
+on:
+    push: 
+        branches: ["main"]
+    pull_equest:
+        branches: ["main"]
+      
+jobs:
+    # Stage Build
+    build:
+        name: Build & Analize
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+            - name: Setup Flutter
+              uses: subosito/flutter-action@v2
+              with:
+                    flutter-version: 3.38.5
+                    channel: stable
+                    cache: true
+            - name: Instalacion de dependencias
+              run: flutter pub get
+            - name: Analizador de codigof
+              run: flutter analyze 
+    test: 
+        name: Prueba unitarias
+        runs-on: ubuntu-latest
+        needs: build # Espera a que se ejecute build
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+            - name: Setup Flutter
+              uses: subosito/flutter-action@v2
+              with:
+                    flutter-version: 3.38.5
+                    channel: stable
+                    cache: true
+            - name: Instalacion de dependencias
+              run: flutter pub get
+            - name: Ejecucion de pruebas unitarias
+              run: flutter test --coverage
+            
+    artifacts:
+        name: Construccion del APK
+        runs-on: ubuntu-latest
+        needs: test
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+            - name: Setup Flutter
+              uses: subosito/flutter-action@v2
+              with:
+                    flutter-version: 3.38.5
+                    channel: stable
+                    cache: true
+            - name: Instalacion de dependencias
+              run: flutter pub get
+            - name: Construccion APK
+              run: flutter build apk --release
+            - name: Subir APK
+              uses: actions/upload-artifact@v4
+              with:
+                name: app-release-apk
+                path: build/app/output/flutter-apk/app-release.apk
